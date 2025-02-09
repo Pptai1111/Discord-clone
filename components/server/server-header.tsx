@@ -42,14 +42,14 @@ export const ServerHeader=({server,role}:ServerHeaderProps)=>{
                 )}
 
                 {isAdmin && (
-                    <DropdownMenuItem className="flex px-3 py-2 text-sm cursor-pointer hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition">
+                    <DropdownMenuItem onClick={()=>onOpen("members",{server})} className="flex px-3 py-2 text-sm cursor-pointer hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition">
                         Manage Members
                         <Users className="h-4 w-4 ml-auto"/>
                     </DropdownMenuItem>
                 )}
 
                 {isModerator && (
-                    <DropdownMenuItem className="flex px-3 py-2 text-sm cursor-pointer hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition">
+                    <DropdownMenuItem onClick={()=>onOpen("createChannel",{server})} className="flex px-3 py-2 text-sm cursor-pointer hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition">
                         Create Channel
                         <PlusCircle className="h-4 w-4 ml-auto"/>
                     </DropdownMenuItem>
