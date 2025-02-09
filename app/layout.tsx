@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
+import { ModalProvider } from "@/components/providers/modal-provider";
 
 const font=Open_Sans({subsets:['latin']})
 
@@ -29,7 +30,8 @@ export default function RootLayout({
           <NextSSRPlugin
           routerConfig={extractRouterConfig(ourFileRouter)}
         />
-          {children}
+        <ModalProvider/>
+          {children} 
         </ThemeProvider>
       </body>
     </html>
