@@ -60,14 +60,14 @@ export const ServerHeader=({server,role}:ServerHeaderProps)=>{
                 )}
 
                 {isAdmin && (
-                    <DropdownMenuItem className="text-rose-500 flex px-3 py-2 text-sm cursor-pointer hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition">
+                    <DropdownMenuItem onClick={()=>onOpen("deleteServer",{server})} className="text-rose-500 flex px-3 py-2 text-sm cursor-pointer hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition">
                         Delete Server
                         <TrashIcon className="h-4 w-4 ml-auto"/>
                     </DropdownMenuItem>
                 )}
 
                 {!isAdmin && (
-                    <DropdownMenuItem className="text-rose-500 flex px-3 py-2 text-sm cursor-pointer hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition">
+                    <DropdownMenuItem onClick={()=>onOpen("leaveServer",{server})} className="text-rose-500 flex px-3 py-2 text-sm cursor-pointer hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition">
                         Leave Server
                         <LogOutIcon className="h-4 w-4 ml-auto"/>
                     </DropdownMenuItem>
