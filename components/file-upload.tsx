@@ -2,10 +2,9 @@
 
 import { FileIcon, X } from 'lucide-react'
 import Image from 'next/image'
-
 import { UploadDropzone } from '@/lib/uploadthing'
-
 import '@uploadthing/react/styles.css'
+import { useEffect, useState } from 'react'
 
 interface FileUploadProps {
   onChange: (url?: string) => void
@@ -14,10 +13,34 @@ interface FileUploadProps {
 }
 
 export const FileUpload = ({ onChange, value, endpoint }: FileUploadProps) => {
-  const fileType = value?.split('?')[0].split('.').pop()
+  const [fileType, setFileType] = useState<'image' | 'pdf' | null>(null)
 
-  if (value && fileType != 'pdf') {
-    console.log(value)
+  // Detect file type when value changes
+  useEffect(() => {
+    const detectFileType = async () => {
+      if (!value) return
+      
+      try {
+        const response = await fetch(value, { method: 'HEAD' })
+        const contentType = response.headers.get('content-type')
+        
+        if (contentType?.includes('application/pdf')) {
+          setFileType('pdf')
+        } else if (contentType?.startsWith('image/')) {
+          setFileType('image')
+        } else {
+          setFileType(null)
+        }
+      } catch (error) {
+        console.error('Error detecting file type:', error)
+        setFileType(null)
+      }
+    }
+
+    detectFileType()
+  }, [value])
+
+  if (value && fileType === 'image') {
     return (
       <div className='relative h-20 w-20'>
         <Image
@@ -26,6 +49,7 @@ export const FileUpload = ({ onChange, value, endpoint }: FileUploadProps) => {
           alt='Upload'
           src={value}
           className='rounded-full'
+          onError={() => setFileType(null)} // Fallback if image fails to load
         />
         <button
           onClick={() => onChange('')}
@@ -39,17 +63,16 @@ export const FileUpload = ({ onChange, value, endpoint }: FileUploadProps) => {
   }
 
   if (value && fileType === 'pdf') {
-    console.log("fileType",fileType)
     return (
       <div className='relative flex items-center p-2 mt-2 rounded-md bg-background/10'>
         <FileIcon className='h-10 w-10 fill-indigo-200 stroke-indigo-500' />
         <a
           href={value}
           target='_blank'
-          rel='noopener nereferrer'
+          rel='noopener noreferrer'
           className='ml-2 text-sm text-indigo-500 dark:text-indigo-500 hover:underline'
         >
-          {value}
+          View your pdf file
         </a>
         <button
           onClick={() => onChange('')}
@@ -66,11 +89,17 @@ export const FileUpload = ({ onChange, value, endpoint }: FileUploadProps) => {
     <UploadDropzone
       endpoint={endpoint}
       onClientUploadComplete={(res) => {
-        console.log("Upload Response:", res);
-        onChange(res?.[0].url)
+        // Use UploadThing's MIME type detection from response
+        const uploadedFileType = res?.[0].type
+        if (uploadedFileType === 'pdf' || uploadedFileType?.startsWith('image/')) {
+          onChange(res?.[0].url)
+        } else {
+          console.error('Unsupported file type')
+          onChange(undefined)
+        }
       }}
       onUploadError={(error: Error) => {
-        console.log(error)
+        console.error('Upload error:', error)
       }}
     />
   )

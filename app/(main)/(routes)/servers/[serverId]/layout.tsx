@@ -32,7 +32,7 @@ export default async function ServerIdLayout({ children, params }: ServerIdLayou
       <div className="max-sm:hidden md:flex h-full w-60 z-20 flex-col md:fixed inset-y-0">
         <ServerSidebar serverId={serverId} />
       </div>
-      <main className="h-full pl-60">{children}</main>
+      <main className="h-full md:pl-60">{children}</main>
     </div>
   );
 }
