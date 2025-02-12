@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useForm } from 'react-hook-form'
@@ -9,9 +8,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '../ui/input'
-import { Plus, Smile } from 'lucide-react'
+import { Plus} from 'lucide-react'
 import { useModal } from '@/hooks/use-modal-store'
 import { useRouter } from 'next/navigation'
+import EmojiPicker from '../emoji-picker'
 
 interface ChatInputProps {
   apiUrl: string
@@ -81,8 +81,7 @@ export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
                     onChange={field.onChange}
                   />
                   <div className='absolute top-7 right-8'>
-                    <Smile
-                    />
+                    <EmojiPicker onChange={(emoji:string)=>field.onChange(`${field.value} ${emoji}`)}/>
                   </div>
                 </div>
               </FormControl>
