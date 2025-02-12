@@ -37,8 +37,9 @@ const ChatMessages = ({
     const addKey=`chat:${chatId}:messages`
     const updateKey=`chat:${chatId}:message:update`
 
-    const chatRef=useRef<ElementRef<"div">>(null);
-    const bottomRef=useRef<ElementRef<"div">>(null);
+    const chatRef = useRef<HTMLDivElement | null>(null);
+    const bottomRef = useRef<HTMLDivElement | null>(null);
+
 
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
     useChatQuery({
@@ -46,7 +47,9 @@ const ChatMessages = ({
     });
 
     useChatScroll({
+    // @ts-ignore
     chatRef,
+    // @ts-ignore
     bottomRef,
     loadMore: fetchNextPage,
     shouldLoadMore: !isFetchingNextPage && !!hasNextPage,
