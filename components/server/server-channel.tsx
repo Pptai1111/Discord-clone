@@ -1,7 +1,7 @@
 "use client";
 
 import { Channel, MemberRole,ChannelType,Server } from "@prisma/client";
-import { Edit, Hash, Lock, Mic, ShieldAlert, ShieldCheck, Trash, Video } from "lucide-react";
+import { Edit, Hash, Lock, Mic, Trash, Video } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ActionTooltip } from "../action-tooltip";

@@ -2,17 +2,13 @@
 
 import {Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,DialogTitle} from "@/components/ui/dialog"
 import { useModal } from "@/hooks/use-modal-store";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { Check, Copy, RefreshCw } from "lucide-react";
-import { useOrigin } from "@/hooks/use-origin";
 import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
 export const LeaveServerModal=()=>{
-    const {onOpen,isOpen,onClose,type,data}=useModal();
+    const {isOpen,onClose,type,data}=useModal();
     const router=useRouter();
 
     const isModalOpen=isOpen && type==='leaveServer';

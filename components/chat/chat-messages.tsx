@@ -4,7 +4,7 @@ import { Member, Message, Profile } from "@prisma/client";
 import ChatWelcome from "./chat-welcome";
 import { useChatQuery } from "@/hooks/use-chat-query";
 import { Loader2, ServerCrash } from "lucide-react";
-import { Fragment,useRef,ElementRef } from "react";
+import { Fragment,useRef} from "react";
 import ChatItem from "./chat-item";
 import { format } from 'date-fns'
 import { useChatSocket } from "@/hooks/use-chat-socket";

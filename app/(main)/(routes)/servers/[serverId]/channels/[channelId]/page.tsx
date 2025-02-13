@@ -4,7 +4,6 @@ import ChatMessages from '@/components/chat/chat-messages'
 import { MediaRoom } from '@/components/media-room'
 import { currentProfile } from '@/lib/current-profile'
 import { db } from '@/lib/db'
-import { auth } from '@clerk/nextjs/server'
 import { ChannelType } from '@prisma/client'
 import { redirect } from 'next/navigation'
 
