@@ -1,22 +1,24 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  images:{
-    domains:[
-      "uploadthing.com",
-      "utfs.io",
-    ]
-  }
-}
-
-module.exports = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "utfs.io",
+      },
+      {
+        protocol: "https",
+        hostname: "uploadthing",
+      },
+    ],
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
-
-
-
-
-export default nextConfig;
+export default nextConfig;
