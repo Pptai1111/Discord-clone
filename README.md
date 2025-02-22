@@ -33,7 +33,7 @@ A sleek real-time chat app inspired by Discord, built using:
 1.  **Clone the repository**
    
    ```bash  
-   git clone https://github.com/your-username/discord-clone.git  
+   git clone https://github.com/Souvik606/discord-clone.git  
    cd discord-clone
   ```
 
