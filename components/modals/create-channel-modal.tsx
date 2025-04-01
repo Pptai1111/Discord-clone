@@ -15,18 +15,21 @@ import {Button} from "@/components/ui/button"
 import { useParams, useRouter } from "next/navigation";
 import { useModal } from "@/hooks/use-modal-store";
 import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from "../ui/select";
-import { ChannelType } from "@prisma/client";
 import { useEffect } from "react";
+import { ChannelType } from "@/hooks/use-modal-store";
 
-const formSchema=z.object({
-    name:z.string().min(1,{
-        message:"Channel name is required."
-    }).refine(name => name!=="general",{
-        message:"Channel name cannot be 'general'"
+// Định nghĩa zod schema
+const formSchema = z.object({
+    name: z.string().min(1, {
+        message: "Channel name is required."
+    }).refine(name => name !== "general", {
+        message: "Channel name cannot be 'general'"
     }),
-    type:z.nativeEnum(ChannelType)
-})
+    type: z.enum(["TEXT", "AUDIO", "VIDEO", "WATCH"] as const)
+});
 
+// Danh sách các loại kênh để hiển thị trong dropdown
+const CHANNEL_TYPES: ChannelType[] = ["TEXT", "AUDIO", "VIDEO", "WATCH"];
 
 export const CreateChannelModal=()=>{
     const {isOpen,onClose,type,data}=useModal();
@@ -40,17 +43,16 @@ export const CreateChannelModal=()=>{
         resolver: zodResolver(formSchema),
         defaultValues:{
             name:"",
-            type:channelType||ChannelType.TEXT,
+            type: (channelType as ChannelType) || "TEXT",
         }
-    }
-    );
+    });
 
     useEffect(()=>{
         if(channelType){
-            form.setValue("type",channelType);
+            form.setValue("type", channelType as ChannelType);
         }
         else{
-            form.setValue("type",ChannelType.TEXT)
+            form.setValue("type", "TEXT" as ChannelType)
         }
     },[channelType,form])
 
@@ -122,7 +124,7 @@ export const CreateChannelModal=()=>{
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {Object.values(ChannelType).map((type)=>(
+                                        {CHANNEL_TYPES.map((type)=>(
                                             <SelectItem key={type} value={type} className="capitalize">
                                                 {type.toLowerCase()}
                                             </SelectItem>

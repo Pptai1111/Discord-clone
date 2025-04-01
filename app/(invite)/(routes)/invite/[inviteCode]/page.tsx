@@ -2,15 +2,18 @@ import { currentProfile } from "@/lib/current-profile";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 
+// Thêm cấu hình để sửa lỗi build
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 interface InviteCodePageProps {
   params: {
     inviteCode: string;
   };
-
 }
 
-const InviteCodePage = async ({ params }: { params: { inviteCode: string } }) => {
-    const { inviteCode} = await params;
+const InviteCodePage = async ({ params }: { params: { inviteCode: string } }) => {
+  const { inviteCode } = await params;
 
   const profile = await currentProfile();
 

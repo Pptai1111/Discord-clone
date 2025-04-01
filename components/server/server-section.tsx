@@ -1,10 +1,23 @@
 "use client";
 
 import { ServerWithMemberWithProfiles } from "@/types";
-import { ChannelType, MemberRole } from "@prisma/client";
 import { ActionTooltip } from "../action-tooltip";
 import { Plus, Settings } from "lucide-react";
 import { useModal } from "@/hooks/use-modal-store";
+
+// Định nghĩa ChannelType và MemberRole trực tiếp
+enum ChannelType {
+  TEXT = "TEXT",
+  AUDIO = "AUDIO",
+  VIDEO = "VIDEO", 
+  WATCH = "WATCH"
+}
+
+enum MemberRole {
+  ADMIN = "ADMIN",
+  MODERATOR = "MODERATOR",
+  GUEST = "GUEST"
+}
 
 interface ServerSectionProps{
     label:string;
@@ -12,7 +25,6 @@ interface ServerSectionProps{
     sectionType:"channels"|"members";
     channelType?:ChannelType;
     server?:ServerWithMemberWithProfiles
-
 }
 
 export const ServerSection=({

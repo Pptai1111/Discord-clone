@@ -19,6 +19,20 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  reactStrictMode: false,
+  experimental: {
+    // Tắt SSR cho API routes
+    serverActions: {
+      allowedOrigins: ["localhost:3000"]
+    },
+    // Cải thiện hydration
+    optimizeCss: true
+  },
+  onDemandEntries: {
+    // Giữ các trang được tạo lâu hơn trong bộ nhớ cache
+    maxInactiveAge: 60 * 60 * 1000,
+    pagesBufferLength: 5,
+  }
 };
 
-export default nextConfig;
+export default nextConfig;

@@ -1,30 +1,53 @@
 "use client";
 
-import { Channel, MemberRole,ChannelType,Server } from "@prisma/client";
-import { Edit, Hash, Lock, Mic, Trash, Video } from "lucide-react";
+import { Edit, Hash, Lock, Mic, Trash, Video, MonitorPlay } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ActionTooltip } from "../action-tooltip";
 import { ModalType, useModal } from "@/hooks/use-modal-store";
 
-interface ServerChannelProps{
-    channel:Channel;
-    server:Server;
-    role?:MemberRole;
+// Định nghĩa các interface để thay thế @prisma/client
+enum MemberRole {
+  ADMIN = "ADMIN",
+  MODERATOR = "MODERATOR",
+  GUEST = "GUEST"
 }
 
-const iconMap={
-    [ChannelType.TEXT]:Hash,
-    [ChannelType.AUDIO]:Mic,
-    [ChannelType.VIDEO]:Video
+// Định nghĩa ChannelType
+type ChannelType = "TEXT" | "AUDIO" | "VIDEO" | "WATCH";
+
+interface Channel {
+  id: string;
+  name: string;
+  type: string;
+  serverId: string;
 }
+
+interface Server {
+  id: string;
+  name: string;
+}
+
+interface ServerChannelProps {
+  channel: Channel;
+  server: Server;
+  role?: MemberRole;
+}
+
+// Mở rộng iconMap để hỗ trợ WATCH
+const iconMap: Record<ChannelType, any> = {
+    "TEXT": Hash,
+    "AUDIO": Mic,
+    "VIDEO": Video,
+    "WATCH": MonitorPlay
+};
 
 export const ServerChannel=({channel,server,role}:ServerChannelProps)=>{
     const params=useParams()
     const router=useRouter()
     const {onOpen}=useModal()
 
-    const Icon=iconMap[channel.type]
+    const Icon = iconMap[channel.type as ChannelType] || Hash;
 
     const onClick=()=>{
         router.push(`/servers/${params?.serverId}/channels/${channel.id}`)
