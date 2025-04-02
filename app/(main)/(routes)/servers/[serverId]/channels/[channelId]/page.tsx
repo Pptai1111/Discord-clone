@@ -3,6 +3,7 @@ import { ChatInput } from '@/components/chat/chat-input'
 import ChatMessages from '@/components/chat/chat-messages'
 import { MediaRoom } from '@/components/media-room'
 import { WatchRoom } from '@/components/watch-room'
+import { ChatbotRoom } from '@/components/chatbot-room'
 import { currentProfile } from '@/lib/current-profile'
 import { db } from '@/lib/db'
 import { redirect } from 'next/navigation'
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 // Định nghĩa ChannelType trực tiếp trong file thay vì import
-type ChannelType = "TEXT" | "AUDIO" | "VIDEO" | "WATCH";
+type ChannelType = "TEXT" | "AUDIO" | "VIDEO" | "WATCH" | "CHATBOT";
 
 interface ChannelIdPageProps {
   params: {
@@ -126,6 +127,9 @@ const ChannelIdPage = async ({ params }: ChannelIdPageProps) => {
             </div>
           </div>
         </div>
+      )}
+      {isChannelType("CHATBOT") && (
+        <ChatbotRoom chatId={channel.id} member={member} />
       )}
     </div>
   )

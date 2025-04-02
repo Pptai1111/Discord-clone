@@ -1,31 +1,22 @@
 "use client";
 
-import { Edit, Hash, Lock, Mic, Trash, Video, MonitorPlay } from "lucide-react";
+import { Edit, Hash, Lock, Mic, Trash, Video, MonitorPlay, Bot } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ActionTooltip } from "../action-tooltip";
 import { ModalType, useModal } from "@/hooks/use-modal-store";
+import { Channel, MemberRole, ChannelType } from "@prisma/client";
 
-// Định nghĩa các interface để thay thế @prisma/client
-enum MemberRole {
-  ADMIN = "ADMIN",
-  MODERATOR = "MODERATOR",
-  GUEST = "GUEST"
-}
-
-// Định nghĩa ChannelType
-type ChannelType = "TEXT" | "AUDIO" | "VIDEO" | "WATCH";
-
-interface Channel {
-  id: string;
-  name: string;
-  type: string;
-  serverId: string;
-}
-
+// Sử dụng kiểu Server tương thích với use-modal-store
 interface Server {
   id: string;
   name: string;
+  imageUrl: string;
+  inviteCode: string;
+  profileId: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface ServerChannelProps {
@@ -34,56 +25,68 @@ interface ServerChannelProps {
   role?: MemberRole;
 }
 
-// Mở rộng iconMap để hỗ trợ WATCH
-const iconMap: Record<ChannelType, any> = {
-    "TEXT": Hash,
-    "AUDIO": Mic,
-    "VIDEO": Video,
-    "WATCH": MonitorPlay
-};
+export const ServerChannel = ({
+  channel,
+  server,
+  role,
+}: ServerChannelProps) => {
+  const { onOpen } = useModal();
+  const params = useParams();
+  const router = useRouter();
 
-export const ServerChannel=({channel,server,role}:ServerChannelProps)=>{
-    const params=useParams()
-    const router=useRouter()
-    const {onOpen}=useModal()
+  const onClick = () => {
+    router.push(`/servers/${server.id}/channels/${channel.id}`);
+  };
 
-    const Icon = iconMap[channel.type as ChannelType] || Hash;
+  const onAction = (e: React.MouseEvent, action: ModalType) => {
+    e.stopPropagation();
+    onOpen(action, { channel, server });
+  };
 
-    const onClick=()=>{
-        router.push(`/servers/${params?.serverId}/channels/${channel.id}`)
-    }
+  const iconMap = {
+    TEXT: Hash,
+    AUDIO: Mic,
+    VIDEO: Video,
+    WATCH: MonitorPlay,
+    CHATBOT: Bot
+  };
 
-    const onAction=(e:React.MouseEvent,action:ModalType)=>{
-        e.stopPropagation();
-        onOpen(action,{channel,server});
-    }
+  const Icon = iconMap[channel.type as keyof typeof iconMap] || Hash;
 
-    return(
-        <button onClick={onClick} className={cn(
-            "group px-2 py-2 rounded-md flex items-center gap-x-2 w-full hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition mb-1",
-            params?.channelId===channel.id && "dark:bg-zinc-700/20 bg-zinc-200"
-    )}>
-        <Icon className="flex-shrink-0 w-5 h-5 text-zinc-500 dark:text-white"/>
-        <p className={cn(
-            "line-clamp-1 font-semibold text-md text-zinc-500 group-hover:text-zinc-600 dark:text-white dark:group-hover:text-zinc-300 transition",
-            params?.channelId===channel.id && "text-primary dark:text-zinc-200 dark:group-hover:text-white"
-        )}>
-            {channel.name}
-        </p>
-        {channel.name!=="general" && role!==MemberRole.GUEST &&(
-            <div className="ml-auto flex items-center gap-x-2">
-                <ActionTooltip label="Edit">
-                    <Edit onClick={(e)=>onAction(e,"editChannel")} className="hidden group-hover:block w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300 transition"/>
-                </ActionTooltip>
+  // Kiểm tra xem channel hiện tại có được chọn không
+  const isActive = params?.channelId === channel.id;
 
-                <ActionTooltip label="Delete">
-                    <Trash onClick={(e)=>onAction(e,"deleteChannel")} className="hidden group-hover:block w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300 transition"/>
-                </ActionTooltip>
-            </div>
-        )}
-        {channel.name==="general" &&(
-            <Lock className="ml-auto w-4 h-4 text-zinc-500 dark:text-zinc-400"/>
-        )}
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "group p-2 rounded-md flex items-center gap-x-2 w-full hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition mb-1",
+        isActive && "bg-zinc-700/20 dark:bg-zinc-700"
+      )}
+    >
+      <Icon className="flex-shrink-0 w-5 h-5 text-zinc-500 dark:text-zinc-400" />
+      <div className="truncate flex-1 text-sm font-semibold text-zinc-500 dark:text-zinc-300 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition">
+        {channel.name}
+      </div>
+      {channel.name !== "general" && role !== MemberRole.GUEST && (
+        <div className="ml-auto flex items-center gap-x-2">
+          <ActionTooltip label="Edit">
+            <Edit
+              onClick={(e) => onAction(e, "editChannel")}
+              className="hidden group-hover:block w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300 transition"
+            />
+          </ActionTooltip>
+          <ActionTooltip label="Delete">
+            <Trash
+              onClick={(e) => onAction(e, "deleteChannel")}
+              className="hidden group-hover:block w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300 transition"
+            />
+          </ActionTooltip>
+        </div>
+      )}
+      {channel.name === "general" && (
+        <Lock className="ml-auto w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+      )}
     </button>
-    )
-}
+  );
+};

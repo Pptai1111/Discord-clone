@@ -1,7 +1,7 @@
 import {create} from "zustand"
 
 // Định nghĩa các type thay vì import từ Prisma
-export type ChannelType = "TEXT" | "AUDIO" | "VIDEO" | "WATCH";
+export type ChannelType = "TEXT" | "AUDIO" | "VIDEO" | "WATCH" | "CHATBOT";
 
 export interface Server {
   id: string;

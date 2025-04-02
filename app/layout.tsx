@@ -10,6 +10,7 @@ import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { ModalProvider } from "@/components/providers/modal-provider";
 import { SocketProvider } from "@/components/providers/socket-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { SocketStatus } from "@/components/socket-status";
 
 // Thêm cấu hình dynamic 
 export const dynamic = "force-dynamic";
@@ -62,7 +63,8 @@ export default function RootLayout({
         <SocketProvider>
           <ModalProvider/>
           <QueryProvider>
-            {children} 
+            {children}
+            <SocketStatus />
           </QueryProvider>
         </SocketProvider>
         </ThemeProvider>

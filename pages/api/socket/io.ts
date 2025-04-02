@@ -18,40 +18,20 @@ let activeRooms: Record<string, Set<string>> = {};
 const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
     console.log("Socket.IO handler called", new Date().toISOString());
     
-    // Dọn dẹp socket cũ nếu tồn tại và server đang khởi động lại
+    // Có instance đã tồn tại
     if (res.socket.server.io) {
-        console.log("Có socket server cũ, đang dọn dẹp...");
-        try {
-            // Đóng tất cả các kết nối hiện tại
-            res.socket.server.io.disconnectSockets(true);
-            // Đóng io server (không làm ở production, chỉ để debug)
-            res.socket.server.io.close();
-            
-            // Xóa tất cả interval đã tạo
-            createdIntervals.forEach(interval => {
-                clearInterval(interval);
-            });
-            createdIntervals = [];
-            
-            // Reset active rooms
-            activeRooms = {};
-            
-            console.log("Đã dọn dẹp kết nối socket cũ thành công");
-        } catch (e) {
-            console.error("Lỗi khi dọn dẹp socket cũ:", e);
-        }
-        
-        // Tạo server mới
-        console.log("Tạo socket server mới sau khi dọn dẹp");
+        console.log("Sử dụng Socket.IO server đã tồn tại");
+        res.end();
+        return;
     }
     
-    if (!res.socket.server.io) {
+    try {
         const path = "/api/socket/io";
         const httpServer: NetServer = res.socket.server as any;
         
         console.log("Khởi tạo Socket.IO server mới...");
         
-        // Cấu hình tối ưu hơn cho Socket.IO server
+        // Cấu hình Socket.IO server - đồng bộ với cấu hình client
         const io = new ServerIO(httpServer, {
             path: path,
             addTrailingSlash: false,
@@ -60,7 +40,8 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
                 methods: ["GET", "POST"],
                 credentials: true,
             },
-            transports: ["websocket", "polling"],
+            // Sử dụng polling trước, phù hợp với cấu hình client
+            transports: ["polling", "websocket"],
             pingTimeout: 60000,
             connectTimeout: 60000,
             pingInterval: 25000,
@@ -80,6 +61,13 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
             socket.broadcast.emit("user:online", {
                 socketId: socket.id,
                 timestamp: new Date().toISOString()
+            });
+            
+            // Thông báo kết nối thành công cho client
+            socket.emit("connection_established", {
+                socketId: socket.id,
+                timestamp: new Date().toISOString(),
+                transportType: socket.conn.transport.name
             });
             
             // Xử lý tham gia và rời phòng
@@ -134,6 +122,15 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
             // Lưu interval để dọn dẹp sau này
             createdIntervals.push(pingInterval);
             
+            // Xử lý transport upgrade
+            socket.conn.on("upgrade", (transport) => {
+                console.log(`Socket ${socket.id} upgraded transport from ${socket.conn.transport.name} to ${transport.name}`);
+                socket.emit("connection_upgraded", {
+                    transport: transport.name,
+                    timestamp: new Date().toISOString()
+                });
+            });
+            
             // Dọn dẹp khi ngắt kết nối
             socket.on("disconnect", (reason) => {
                 console.log(`Socket disconnected: ${socket.id}, reason: ${reason}`);
@@ -167,8 +164,8 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
         // Lưu vào server
         res.socket.server.io = io;
         console.log("Socket.IO server khởi tạo thành công");
-    } else {
-        console.log("Sử dụng Socket.IO server đã tồn tại");
+    } catch (error) {
+        console.error("Lỗi khởi tạo Socket.IO server:", error);
     }
 
     // Gửi phản hồi cho client

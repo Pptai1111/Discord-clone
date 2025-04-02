@@ -14,3 +14,11 @@ export type NextApiResponseServerIo=NextApiResponse &{
         };
     };
 }
+
+export interface SocketData {
+  chatId: string;
+  event: string;
+  data?: any;
+  userId?: string;
+  headers?: Record<string, string>;
+}

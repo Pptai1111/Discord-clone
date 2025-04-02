@@ -73,27 +73,39 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Cấu hình socket.io
-  const initializeSocket = () => {
-    const socketInstance = ClientIO("/api/socket/io", {
-      path: "/api/socket/io",
-      addTrailingSlash: false,
-      transports: ["websocket", "polling"],
-      autoConnect: true,
-      reconnection: true,
-      reconnectionAttempts: 5,
+  // Cấu hình socket.io với origin
+  const initializeSocket = useCallback(() => {
+    // Xác định origin một cách an toàn
+    const origin = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    
+    console.log('Initializing socket connection to:', origin);
+    
+    const socketInstance = ClientIO(origin, {
+      path: '/api/socket/io',
+      // Sử dụng polling trước để đảm bảo kết nối ban đầu
+      transports: ['polling', 'websocket'],
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      randomizationFactor: 0.5,
-      timeout: 20000,
-      extraHeaders: {
-        "x-client-id": socketIdRef.current || ''
-      }
+      timeout: 60000,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      autoConnect: true,
+      forceNew: true,
+      extraHeaders: socketIdRef.current ? {
+        "x-client-id": socketIdRef.current
+      } : undefined
     });
     
-    console.log("Socket initialized with ID:", socketIdRef.current);
+    console.log("Socket initialized with settings:", {
+      path: '/api/socket/io',
+      origin,
+      existingId: socketIdRef.current
+    });
+    
     return socketInstance;
-  };
+  }, []);
 
   // Thiết lập lắng nghe sự kiện cho socket
   const setupSocketListeners = (socket: any) => {
@@ -159,56 +171,40 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
     
     // Lắng nghe sự kiện khi transport thay đổi
-    socket.io.engine.on("upgrade", (transport: { name: string }) => {
-      console.log(`Transport upgraded to ${transport.name}`);
-      setIsPolling(transport.name === 'polling');
-    });
+    if (socket.io && socket.io.engine) {
+      socket.io.engine.on("upgrade", (transport: { name: string }) => {
+        console.log(`Transport upgraded to ${transport.name}`);
+        setIsPolling(transport.name === 'polling');
+      });
+    }
   };
 
   // Sửa phương thức reconnect
   const reconnect = useCallback(() => {
     console.log('Manually reconnecting socket...');
     
-    if (socket) {
+    if (socketRef.current) {
       // Ngắt kết nối cũ nếu còn
-      if (socket.connected) {
-        socket.disconnect();
+      if (socketRef.current.connected) {
+        socketRef.current.disconnect();
       }
       
-      // Tạo kết nối mới
-      console.log('Creating new socket connection');
-      const newSocket = initializeSocket();
-      setupSocketListeners(newSocket);
-      setSocket(newSocket);
-    } else {
-      console.log('No existing socket, creating new one');
-      const newSocket = initializeSocket();
-      setupSocketListeners(newSocket);
-      setSocket(newSocket);
+      // Dọn dẹp tài nguyên
+      cleanupSocket(socketRef.current);
     }
-  }, [socket]);
+    
+    // Tạo kết nối mới
+    console.log('Creating new socket connection');
+    const newSocket = initializeSocket();
+    setupSocketListeners(newSocket);
+    socketRef.current = newSocket;
+    setSocket(newSocket);
+  }, [initializeSocket]);
 
   useEffect(() => {
     // Tạo kết nối socket
-    const origin = (typeof window !== 'undefined') 
-      ? window.location.origin 
-      : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    
-    console.log('Initializing socket connection to:', origin);
-    
     try {
-      const socketInstance = ClientIO(origin, {
-        path: '/api/socket/io',
-        transports: ['websocket', 'polling'],
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 60000,
-        reconnection: true,
-        reconnectionAttempts: Infinity,
-        autoConnect: true,
-        forceNew: true,
-      });
-      
+      const socketInstance = initializeSocket();
       socketRef.current = socketInstance;
       
       // Thiết lập listeners
@@ -216,8 +212,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       
       // Lưu socket instance
       setSocket(socketInstance);
+      
+      console.log('Socket initialized successfully in useEffect');
     } catch (e) {
       console.error('Error creating socket in useEffect:', e);
+      setConnectionError('Không thể kết nối đến máy chủ. Vui lòng tải lại trang.');
     }
 
     return () => {
@@ -232,7 +231,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     };
-  }, []);
+  }, [initializeSocket]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected, isPolling, reconnect }}>

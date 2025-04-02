@@ -18,6 +18,9 @@ interface Viewer {
   lastActive?: number;
 }
 
+// Lưu trữ trạng thái khi mất kết nối
+const WATCH_STATE_STORAGE_KEY = 'watch_room_state';
+
 export const useWatchSocket = (chatId: string, userId?: string) => {
   // Trạng thái kết nối
   const [isConnected, setIsConnected] = useState(false);
@@ -33,14 +36,85 @@ export const useWatchSocket = (chatId: string, userId?: string) => {
   
   // State cho polling và heartbeat
   const [retryCount, setRetryCount] = useState(0);
-  const MAX_RETRIES = 5;
+  const MAX_RETRIES = 10; // Tăng số lần thử từ 5 lên 10
   const lastPingTimeRef = useRef<number | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Caching cho request
   const lastRequestTimeRef = useRef<Record<string, number>>({});
   const MIN_REQUEST_INTERVAL = 500; // Tối thiểu 500ms giữa các request
+
+  // Lưu trạng thái vào localStorage
+  const saveStateToStorage = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const stateToSave = {
+        chatId,
+        playlist,
+        currentIndex,
+        isPlaying,
+        progress,
+        timestamp: Date.now()
+      };
+      
+      localStorage.setItem(
+        `${WATCH_STATE_STORAGE_KEY}_${chatId}`, 
+        JSON.stringify(stateToSave)
+      );
+      
+      console.log('[CLIENT] Saved watch state to storage');
+    } catch (e) {
+      console.error('[CLIENT] Error saving state to storage:', e);
+    }
+  }, [chatId, playlist, currentIndex, isPlaying, progress]);
+  
+  // Khôi phục trạng thái từ localStorage
+  const restoreStateFromStorage = useCallback(() => {
+    if (typeof window === 'undefined') return false;
+    
+    try {
+      const savedStateString = localStorage.getItem(
+        `${WATCH_STATE_STORAGE_KEY}_${chatId}`
+      );
+      
+      if (!savedStateString) return false;
+      
+      const savedState = JSON.parse(savedStateString);
+      const now = Date.now();
+      
+      // Chỉ khôi phục state nếu được lưu trong vòng 5 phút
+      if (now - savedState.timestamp > 5 * 60 * 1000) {
+        console.log('[CLIENT] Saved state is too old, not restoring');
+        localStorage.removeItem(`${WATCH_STATE_STORAGE_KEY}_${chatId}`);
+        return false;
+      }
+      
+      if (savedState.chatId !== chatId) return false;
+      
+      console.log('[CLIENT] Restoring state from storage:', {
+        playlistCount: savedState.playlist?.length || 0,
+        currentIndex: savedState.currentIndex,
+        isPlaying: savedState.isPlaying
+      });
+      
+      if (savedState.playlist?.length > 0) {
+        setPlaylist(savedState.playlist);
+        setCurrentIndex(savedState.currentIndex || 0);
+        setProgress(savedState.progress || 0);
+        setIsPlaying(false); // Luôn bắt đầu ở trạng thái tạm dừng sau khi khôi phục
+        
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      console.error('[CLIENT] Error restoring state from storage:', e);
+      return false;
+    }
+  }, [chatId]);
 
   // Throttle utility
   const throttledRequestRef = useRef<Function | null>(null);
@@ -56,6 +130,13 @@ export const useWatchSocket = (chatId: string, userId?: string) => {
       return func(...args);
     };
   }, []);
+
+  // Tự động lưu trạng thái khi state thay đổi
+  useEffect(() => {
+    if (playlist.length > 0) {
+      saveStateToStorage();
+    }
+  }, [playlist, currentIndex, isPlaying, progress, saveStateToStorage]);
 
   // Gửi heartbeat định kỳ
   useEffect(() => {
@@ -108,12 +189,23 @@ export const useWatchSocket = (chatId: string, userId?: string) => {
       console.log('Socket disconnected in watch-socket');
       setIsConnected(false);
       
+      // Lưu trạng thái hiện tại khi mất kết nối
+      if (playlist.length > 0) {
+        saveStateToStorage();
+      }
+      
       // Bắt đầu polling khi mất kết nối
       if (!pollingIntervalRef.current) {
         setIsPolling(true);
         setRetryCount(0);
         
         console.warn("Mất kết nối socket - chuyển sang chế độ polling");
+        
+        // Sử dụng backoff strategy để tăng thời gian giữa các lần retry
+        const getPollingInterval = (retryCount: number) => {
+          // Bắt đầu với 1000ms và tăng dần, tối đa 10000ms
+          return Math.min(1000 * Math.pow(1.5, retryCount), 10000);
+        };
         
         pollingIntervalRef.current = setInterval(() => {
           console.log('Polling for updates...');
@@ -123,54 +215,83 @@ export const useWatchSocket = (chatId: string, userId?: string) => {
             const newCount = prev + 1;
             
             // Thử kết nối lại socket sau một số lần polling
-            if (newCount % 5 === 0) {
+            if (newCount % 3 === 0) {
               console.log('Trying to reconnect socket...');
-              reconnect();
+              
+              // Sử dụng exponential backoff cho việc reconnect
+              if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+              }
+              
+              reconnectTimeoutRef.current = setTimeout(() => {
+                reconnect();
+                reconnectTimeoutRef.current = null;
+              }, getPollingInterval(newCount));
+            }
+            
+            // Cập nhật polling interval dựa trên số lần thử
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current);
+              
+              if (newCount <= MAX_RETRIES) {
+                pollingIntervalRef.current = setInterval(() => {
+                  pollForUpdates();
+                }, getPollingInterval(newCount));
+              } else {
+                pollingIntervalRef.current = null;
+                setIsPolling(false);
+                console.error("Đã đạt giới hạn thử lại - Vui lòng tải lại trang");
+              }
             }
             
             return newCount;
           });
           
-          // Fetch qua HTTP
-          fetch(`/api/socket/watch?chatId=${chatId}`, {
-            method: 'GET',
-            headers: {
-              'Cache-Control': 'no-cache',
-              'Pragma': 'no-cache'
-            }
-          })
-            .then(response => {
-              if (!response.ok) {
-                throw new Error(`HTTP error ${response.status}`);
-              }
-              return response.json();
-            })
-            .then(data => {
-              console.log('Polled data:', data);
-              
-              // Cập nhật state từ polling
-              if (data.playlist) setPlaylist(data.playlist);
-              if (data.currentIndex !== undefined) setCurrentIndex(data.currentIndex);
-              if (data.isPlaying !== undefined) setIsPlaying(data.isPlaying);
-              if (data.progress !== undefined) setProgress(data.progress);
-              if (data.viewers) setViewers(data.viewers);
-            })
-            .catch(error => {
-              console.error('Polling error:', error);
-              
-              // Nếu thử lại quá nhiều lần, dừng polling
-              if (retryCount >= MAX_RETRIES) {
-                if (pollingIntervalRef.current) {
-                  clearInterval(pollingIntervalRef.current);
-                  pollingIntervalRef.current = null;
-                  setIsPolling(false);
-                  
-                  console.error("Không thể kết nối - Vui lòng tải lại trang");
-                }
-              }
-            });
+          pollForUpdates();
         }, 1000);
       }
+    };
+    
+    // Hàm polling cập nhật qua HTTP
+    const pollForUpdates = () => {
+      // Fetch qua HTTP
+      fetch(`/api/socket/watch?chatId=${chatId}`, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Polled data:', data);
+          
+          // Cập nhật state từ polling
+          if (data.playlist) setPlaylist(data.playlist);
+          if (data.currentIndex !== undefined) setCurrentIndex(data.currentIndex);
+          if (data.isPlaying !== undefined) setIsPlaying(data.isPlaying);
+          if (data.progress !== undefined) setProgress(data.progress);
+          if (data.viewers) setViewers(data.viewers);
+        })
+        .catch(error => {
+          console.error('Polling error:', error);
+          
+          // Nếu thử lại quá nhiều lần, dừng polling
+          if (retryCount >= MAX_RETRIES) {
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current);
+              pollingIntervalRef.current = null;
+              setIsPolling(false);
+              
+              console.error("Không thể kết nối - Vui lòng tải lại trang");
+            }
+          }
+        });
     };
 
     // Lắng nghe các sự kiện
@@ -232,7 +353,12 @@ export const useWatchSocket = (chatId: string, userId?: string) => {
           }
           
           console.log('[CLIENT] Đã thêm video mới vào playlist:', video.title || video.url);
-          return [...prev, video];
+          const newPlaylist = [...prev, video];
+          
+          // Lưu trạng thái vào storage
+          setTimeout(() => saveStateToStorage(), 0);
+          
+          return newPlaylist;
         });
       });
       
@@ -281,6 +407,9 @@ export const useWatchSocket = (chatId: string, userId?: string) => {
               
               // Cập nhật playlist hoàn chỉnh, không chỉ thêm video mới
               setPlaylist(validPlaylist);
+              
+              // Lưu vào localStorage
+              setTimeout(() => saveStateToStorage(), 0);
             } else if (data.playlist.length === 0) {
               console.log('[CLIENT] Xóa playlist do nhận playlist rỗng');
               setPlaylist([]);
@@ -345,6 +474,19 @@ export const useWatchSocket = (chatId: string, userId?: string) => {
     };
 
     setupSocketListeners();
+    
+    // Khôi phục trạng thái từ localStorage nếu có
+    if (playlist.length === 0) {
+      const restored = restoreStateFromStorage();
+      
+      // Nếu khôi phục thành công, yêu cầu đồng bộ
+      if (restored && socket.connected) {
+        socket.emit('watch:requestSync', {
+          chatId,
+          event: 'watch:requestSync'
+        });
+      }
+    }
 
     // Cleanup khi unmount
     return () => {
@@ -371,8 +513,13 @@ export const useWatchSocket = (chatId: string, userId?: string) => {
         clearInterval(heartbeatIntervalRef.current);
         heartbeatIntervalRef.current = null;
       }
+      
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
     };
-  }, [socket, chatId, retryCount, reconnect]);
+  }, [socket, chatId, retryCount, reconnect, userId, restoreStateFromStorage, saveStateToStorage, playlist.length]);
 
   // Thiết lập throttle request
   useEffect(() => {
@@ -623,5 +770,7 @@ export const useWatchSocket = (chatId: string, userId?: string) => {
     isPlaying,
     progress,
     viewers,
+    saveStateToStorage,
+    fallbackSyncRequest
   };
 }; 

@@ -25,11 +25,11 @@ const formSchema = z.object({
     }).refine(name => name !== "general", {
         message: "Channel name cannot be 'general'"
     }),
-    type: z.enum(["TEXT", "AUDIO", "VIDEO", "WATCH"] as const)
+    type: z.enum(["TEXT", "AUDIO", "VIDEO", "WATCH", "CHATBOT"] as const)
 });
 
 // Danh sách các loại kênh để hiển thị trong dropdown
-const CHANNEL_TYPES: ChannelType[] = ["TEXT", "AUDIO", "VIDEO", "WATCH"];
+const CHANNEL_TYPES: ChannelType[] = ["TEXT", "AUDIO", "VIDEO", "WATCH", "CHATBOT"];
 
 export const EditChannelModal=()=>{
     const {isOpen,onClose,type,data}=useModal();

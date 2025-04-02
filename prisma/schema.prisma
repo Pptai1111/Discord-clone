@@ -78,6 +78,7 @@ enum ChannelType {
   AUDIO
   VIDEO
   WATCH
+  CHATBOT
 }
 
 model Channel {
