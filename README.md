@@ -1,32 +1,36 @@
-# 📅 Lịch sử phát triển dự án Discord Clone
+# Discord Clone – Lịch Sử & Tổng Quan Dự Án
 
-## Thời gian thực hiện: 02/2025 – 06/2025
-
-### 02/2025
-- Khởi tạo dự án Next.js, cấu hình TypeScript, Tailwind CSS, ShadCN UI.
-- Thiết kế cấu trúc thư mục, tạo các trang cơ bản.
-- Tích hợp Clerk cho xác thực người dùng.
-
-### 03/2025
-- Xây dựng chức năng tạo server, quản lý server, phân quyền thành viên.
-- Thêm chức năng nhắn tin real-time với Socket.IO.
-- Thiết kế UI chat, sidebar, navigation.
-
-### 04/2025
-- Tích hợp LiveKit cho gọi thoại/video nhóm.
-- Thêm upload file với UploadThing.
-- Hoàn thiện UI responsive cho desktop/mobile.
-
-### 05/2025
-- Thêm chatbot AI, phòng chat đặc biệt (ChatbotRoom).
-- Tối ưu trải nghiệm người dùng, hiệu ứng Otome/Visual Novel cho phòng chat.
-- Thêm chức năng chỉnh sửa, xóa tin nhắn, quản lý thành viên nâng cao.
-
-### 06/2025
-- Hoàn thiện tài liệu, kiểm thử, sửa lỗi.
-- Deploy bản production, tối ưu hiệu năng.
-- Tổng kết, viết báo cáo dự án.
+> **Tác giả:** Phan Phú Tài  
+> **Thời gian phát triển:** 02/2025 – 06/2025
 
 ---
 
-> Đây là nhật ký phát triển, không phải hướng dẫn sử dụng. Nếu cần hướng dẫn cài đặt, vui lòng xem lại các commit cũ hoặc liên hệ tác giả.
+## 🏆 Giới Thiệu
+Dự án Discord Clone là một ứng dụng chat real-time lấy cảm hứng từ Discord, tích hợp nhiều tính năng hiện đại như quản lý server, chat nhóm, gọi thoại/video, chia sẻ file, chatbot AI và giao diện phòng chat phong cách Otome/Visual Novel.
+
+**Công nghệ sử dụng:**
+- Next.js, TypeScript, Tailwind CSS, ShadCN UI
+- Clerk (xác thực), Socket.IO (real-time), LiveKit (voice/video), UploadThing (file)
+
+---
+
+## 📅 Timeline Phát Triển
+
+| Thời gian   | Hạng mục chính                | Nội dung nổi bật                                                                 |
+|-------------|-------------------------------|---------------------------------------------------------------------------------|
+| 02/2025     | Khởi tạo & Cơ bản             | Tạo project, cấu hình, thiết kế thư mục, tích hợp xác thực Clerk                |
+| 03/2025     | Server & Chat                 | Quản lý server, phân quyền, chat real-time, UI chat, sidebar, navigation        |
+| 04/2025     | Voice/Video & File            | Gọi thoại/video với LiveKit, upload file, responsive UI                         |
+| 05/2025     | Chatbot & Trải nghiệm nâng cao| Thêm ChatbotRoom, hiệu ứng Otome, chỉnh sửa/xóa tin nhắn, quản lý thành viên    |
+| 06/2025     | Hoàn thiện & Triển khai       | Viết tài liệu, kiểm thử, deploy production, tổng kết dự án                      |
+
+---
+
+## 💡 Điểm Nổi Bật
+- Giao diện hiện đại, tối ưu trải nghiệm người dùng trên mọi thiết bị.
+- Phòng chat chatbot lấy cảm hứng từ game Otome/Visual Novel.
+- Tích hợp đầy đủ các tính năng như một nền tảng chat chuyên nghiệp.
+
+---
+
+> _Tài liệu này là nhật ký phát triển và tổng quan dự án. Mọi thắc mắc về cài đặt hoặc đóng góp, vui lòng liên hệ tác giả._
