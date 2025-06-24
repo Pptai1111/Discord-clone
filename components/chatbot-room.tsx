@@ -11,21 +11,6 @@ import { cn } from '@/lib/utils'
 // Định nghĩa character mặc định
 const DEFAULT_CHARACTERS = [
   {
-    id: 'misa',
-    name: 'Misa',
-    description: 'Trợ lý anime vui vẻ',
-    avatars: {
-      neutral: '/characters/misa/neutral.png',
-      happy: '/characters/misa/happy.png',
-      sad: '/characters/misa/sad.png',
-      angry: '/characters/misa/angry.png',
-      surprised: '/characters/misa/surprised.png',
-    },
-    speechRate: 1.1,
-    speechPitch: 1.2,
-    preferredVoice: 'female'
-  },
-  {
     id: 'robot',
     name: 'Robo',
     description: 'Robot thông minh',
@@ -39,6 +24,21 @@ const DEFAULT_CHARACTERS = [
     speechRate: 0.9,
     speechPitch: 0.8,
     preferredVoice: 'male'
+  },
+  {
+    id: 'misa',
+    name: 'Misa',
+    description: 'Trợ lý anime vui vẻ',
+    avatars: {
+      neutral: '/characters/misa/neutral.png',
+      happy: '/characters/misa/happy.png',
+      sad: '/characters/misa/sad.png',
+      angry: '/characters/misa/angry.png',
+      surprised: '/characters/misa/surprised.png',
+    },
+    speechRate: 1.1,
+    speechPitch: 1.2,
+    preferredVoice: 'female'
   }
 ];
 
@@ -140,16 +140,15 @@ export const ChatbotRoom = ({ chatId, member }: ChatbotRoomProps) => {
     utterance.rate = character.speechRate || 1;
     utterance.pitch = character.speechPitch || 1;
     
-    // Lấy danh sách giọng
+    // Luôn chọn voice nữ (bỏ gender, chỉ check name/voiceURI)
     const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      // Tìm giọng phù hợp
-      const preferredVoice = character.preferredVoice === 'female' 
-        ? voices.find(v => v.name.includes('Female') || v.name.includes('female'))
-        : voices.find(v => v.name.includes('Male') || v.name.includes('male'));
-        
-      if (preferredVoice) utterance.voice = preferredVoice;
-    }
+    const femaleVoice = voices.find(v =>
+      v.name.toLowerCase().includes('female') ||
+      v.name.toLowerCase().includes('woman') ||
+      v.name.toLowerCase().includes('girl') ||
+      v.voiceURI.toLowerCase().includes('female')
+    );
+    if (femaleVoice) utterance.voice = femaleVoice;
     
     // Sự kiện bắt đầu/kết thúc nói
     utterance.onstart = () => setIsSpeaking(true);
@@ -237,25 +236,36 @@ export const ChatbotRoom = ({ chatId, member }: ChatbotRoomProps) => {
   };
   
   return (
-    <div className="flex flex-col h-full bg-zinc-900 overflow-hidden">
+    <div className="flex flex-col h-full min-h-screen bg-background bg-cover bg-center font-['Quicksand',_sans-serif] relative">
+      {/* Nền mờ, có thể thêm hình nền nếu muốn */}
+      <div className="absolute inset-0 z-0 opacity-40 bg-[url('/bg-otome.jpg')] bg-cover bg-center pointer-events-none dark:opacity-20" />
       {/* Header */}
-      <div className="bg-zinc-800 p-3 flex items-center justify-between">
-        <div className="flex items-center">
-          <h2 className="text-zinc-100 font-semibold">{character.name}</h2>
-          <span className="text-zinc-400 text-xs ml-2">{character.description}</span>
+      <div className="relative z-10 flex items-center justify-between px-6 py-4 bg-white/70 dark:bg-zinc-900/80 shadow-lg border-b border-border rounded-b-3xl">
+        <div className="flex items-center gap-4">
+          <div className={`relative h-20 w-20 rounded-full border-4 border-pink-300 dark:border-indigo-700 shadow-xl bg-white dark:bg-zinc-900 flex items-center justify-center transition-all duration-300 ${isSpeaking ? 'scale-110 ring-4 ring-pink-200/60 dark:ring-indigo-400/60' : ''}`}> 
+            <img
+              src={getAvatarUrl(currentEmotion)}
+              alt={character.name}
+              className="h-16 w-16 object-contain rounded-full"
+            />
+          </div>
+          <div>
+            <div className="text-2xl font-extrabold text-pink-500 dark:text-indigo-300 drop-shadow-sm tracking-wide" style={{ letterSpacing: '0.04em' }}>{character.name}</div>
+            <div className="text-sm text-indigo-400 dark:text-zinc-300 italic">{character.description}</div>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-10 w-10"
             onClick={() => setSpeechEnabled(!speechEnabled)}
             title={speechEnabled ? "Tắt giọng nói" : "Bật giọng nói"}
           >
-            {speechEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            {speechEnabled ? <Volume2 className="h-6 w-6 text-pink-400 dark:text-indigo-300" /> : <VolumeX className="h-6 w-6 text-indigo-300 dark:text-pink-400" />}
           </Button>
-          <select 
-            className="bg-zinc-700 text-zinc-200 rounded px-2 py-1 text-sm"
+          <select
+            className="bg-pink-100 dark:bg-zinc-800 text-pink-600 dark:text-indigo-200 rounded px-3 py-1 text-base border border-pink-300 dark:border-indigo-700 focus:outline-none focus:ring-2 focus:ring-pink-200 dark:focus:ring-indigo-400 shadow"
             value={character.id}
             onChange={(e) => switchCharacter(e.target.value)}
           >
@@ -265,112 +275,82 @@ export const ChatbotRoom = ({ chatId, member }: ChatbotRoomProps) => {
           </select>
         </div>
       </div>
-      
+
       {/* Main Content */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Character Display */}
-        <div className="h-64 md:h-auto md:w-1/3 bg-zinc-950 flex items-center justify-center p-4 relative">
-          <div className={`transition-all duration-300 ${isSpeaking ? 'scale-105' : 'scale-100'}`}>
-            <img 
-              src={getAvatarUrl(currentEmotion)} 
+      <div className="relative z-10 flex-1 flex flex-col md:flex-row overflow-hidden">
+        {/* Avatar nhân vật lớn (Otome style) */}
+        <div className="hidden md:flex md:w-1/3 items-end justify-center p-6 relative">
+          <div className={`transition-all duration-300 ${isSpeaking ? 'scale-110' : 'scale-100'}`}> 
+            <img
+              src={getAvatarUrl(currentEmotion)}
               alt={`${character.name} feeling ${currentEmotion}`}
-              className="max-h-full max-w-full object-contain"
+              className="h-72 w-72 object-contain rounded-3xl shadow-2xl border-4 border-pink-200 dark:border-indigo-700 bg-white dark:bg-zinc-900"
+              style={{ boxShadow: '0 8px 32px 0 rgba(255,182,193,0.15)' }}
             />
           </div>
         </div>
-        
+
         {/* Chat Display */}
-        <div className="flex-1 flex flex-col md:border-l border-zinc-800 overflow-hidden">
+        <div className="flex-1 flex flex-col border-l border-border bg-white/60 dark:bg-zinc-900/60">
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-zinc-500">
-                <Bot className="h-10 w-10 mb-2 text-zinc-600" />
-                <p className="text-sm">Hãy bắt đầu cuộc trò chuyện với {character.name}</p>
+              <div className="flex flex-col items-center justify-center h-full text-indigo-400 dark:text-indigo-200">
+                <Bot className="h-14 w-14 mb-3 text-pink-300/70 dark:text-indigo-400/70" />
+                <p className="text-lg">Hãy bắt đầu cuộc trò chuyện với <span className="text-pink-500 dark:text-indigo-300 font-bold">{character.name}</span></p>
               </div>
             ) : (
               messages.map((message) => (
-                <div 
-                  key={message.id}
-                  className={cn(
-                    "flex items-start gap-3 max-w-[85%]",
-                    message.role === 'user' ? "ml-auto" : "mr-auto"
-                  )}
-                >
-                  {message.role !== 'user' && (
-                    <div 
-                      className="h-8 w-8 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0"
-                      style={{
-                        backgroundImage: `url(${getAvatarUrl(message.emotion || 'neutral')})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center top'
-                      }}
-                    />
-                  )}
-                  
-                  <div
-                    className={cn(
-                      "p-3 rounded-lg text-sm",
-                      message.role === 'user' 
-                        ? "bg-indigo-600 text-white" 
-                        : "bg-zinc-800 text-zinc-200"
-                    )}
-                  >
-                    {message.content}
+                message.role === 'assistant' ? (
+                  <div key={message.id} className="flex flex-col items-start max-w-2xl">
+                    {/* Khung thoại Otome */}
+                    <div className="relative mb-2">
+                      <div className="absolute -top-8 left-4 bg-pink-200 dark:bg-indigo-800 px-4 py-1 rounded-full text-pink-700 dark:text-indigo-100 font-bold shadow text-base border border-pink-300 dark:border-indigo-700" style={{ letterSpacing: '0.04em' }}>{character.name}</div>
+                      <div className="px-6 py-5 rounded-3xl bg-white/90 dark:bg-zinc-900/90 border-2 border-pink-200 dark:border-indigo-700 shadow-xl text-lg text-indigo-700 dark:text-indigo-100 font-medium min-w-[220px] max-w-xl" style={{ boxShadow: '0 4px 24px 0 rgba(255,182,193,0.10)' }}>
+                        {message.content}
+                      </div>
+                    </div>
                   </div>
-                  
-                  {message.role === 'user' && (
-                    <div 
-                      className="h-8 w-8 rounded-full overflow-hidden bg-zinc-700 flex-shrink-0"
-                      style={{
-                        backgroundImage: `url(${member?.profile?.imageUrl})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center'
-                      }}
-                    />
-                  )}
-                </div>
+                ) : (
+                  <div key={message.id} className="flex flex-col items-end max-w-2xl ml-auto">
+                    <div className="px-6 py-5 rounded-3xl bg-indigo-200/80 dark:bg-pink-900/60 border-2 border-indigo-300 dark:border-pink-700 shadow text-lg text-indigo-900 dark:text-pink-100 font-medium min-w-[120px] max-w-xl">
+                      {message.content}
+                    </div>
+                  </div>
+                )
               ))
             )}
-            
             {isLoading && (
-              <div className="flex items-start gap-3 max-w-[85%] mr-auto">
-                <div 
-                  className="h-8 w-8 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0"
-                  style={{
-                    backgroundImage: `url(${getAvatarUrl('neutral')})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center top'
-                  }}
-                />
-                <div className="p-3 rounded-lg text-sm bg-zinc-800 text-zinc-200">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+              <div className="flex flex-col items-start max-w-2xl">
+                <div className="absolute -top-8 left-4 bg-pink-200 dark:bg-indigo-800 px-4 py-1 rounded-full text-pink-700 dark:text-indigo-100 font-bold shadow text-base border border-pink-300 dark:border-indigo-700">{character.name}</div>
+                <div className="px-6 py-5 rounded-3xl bg-white/90 dark:bg-zinc-900/90 border-2 border-pink-200 dark:border-indigo-700 shadow-xl text-lg text-indigo-700 dark:text-indigo-100 font-medium min-w-[220px] max-w-xl flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin text-pink-400 dark:text-indigo-300" /> Đang trả lời...
                 </div>
               </div>
             )}
-            
             <div ref={endOfMessagesRef} />
           </div>
-          
+
           {/* Input */}
-          <div className="p-3 border-t border-zinc-800">
-            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+          <div className="relative z-20 p-6 border-t border-border bg-white/80 dark:bg-zinc-900/80 rounded-t-3xl shadow-xl">
+            <form onSubmit={handleSendMessage} className="flex items-center gap-4">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={`Nhắn tin với ${character.name}...`}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-pink-50 dark:bg-zinc-800 border border-pink-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-100 placeholder:text-pink-300 dark:placeholder:text-indigo-400 focus:ring-2 focus:ring-pink-200 dark:focus:ring-indigo-400 focus:border-pink-300 dark:focus:border-indigo-700 rounded-2xl px-6 py-3 text-lg shadow"
                 disabled={isLoading}
+                autoFocus
               />
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isLoading || !input.trim()}
-                className="bg-indigo-600 hover:bg-indigo-700"
+                className="bg-gradient-to-r from-pink-400 to-indigo-300 dark:from-indigo-700 dark:to-pink-400 hover:from-pink-500 hover:to-indigo-400 dark:hover:from-indigo-800 dark:hover:to-pink-500 text-white rounded-full h-14 w-14 flex items-center justify-center shadow-xl text-xl"
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 ) : (
-                  <Send className="h-4 w-4" />
+                  <Send className="h-6 w-6" />
                 )}
               </Button>
             </form>
@@ -379,4 +359,4 @@ export const ChatbotRoom = ({ chatId, member }: ChatbotRoomProps) => {
       </div>
     </div>
   );
-}; 
+};

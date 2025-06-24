@@ -1,73 +1,32 @@
-# 🎧 Discord Clone  
+# 📅 Lịch sử phát triển dự án Discord Clone
 
-A sleek real-time chat app inspired by Discord, built using:  
+## Thời gian thực hiện: 02/2025 – 06/2025
 
-- ✨ **Next.js** – Modern React framework for server-side rendering.  
-- 🎨 **ShadCN** – Pre-styled components for rapid UI building.  
-- 🎋 **Tailwind CSS** – Utility-first CSS framework.  
-- 🔑 **Clerk** – Authentication and user management.  
-- 📦 **Zustand** – Simple and scalable state management.  
-- 🎤 **LiveKit** – High-quality voice/video streaming.  
-- 🗂️ **UploadThing** – Easy file uploads.  
-- 💬 **Socket.IO** – Real-time bidirectional communication.  
+### 02/2025
+- Khởi tạo dự án Next.js, cấu hình TypeScript, Tailwind CSS, ShadCN UI.
+- Thiết kế cấu trúc thư mục, tạo các trang cơ bản.
+- Tích hợp Clerk cho xác thực người dùng.
+
+### 03/2025
+- Xây dựng chức năng tạo server, quản lý server, phân quyền thành viên.
+- Thêm chức năng nhắn tin real-time với Socket.IO.
+- Thiết kế UI chat, sidebar, navigation.
+
+### 04/2025
+- Tích hợp LiveKit cho gọi thoại/video nhóm.
+- Thêm upload file với UploadThing.
+- Hoàn thiện UI responsive cho desktop/mobile.
+
+### 05/2025
+- Thêm chatbot AI, phòng chat đặc biệt (ChatbotRoom).
+- Tối ưu trải nghiệm người dùng, hiệu ứng Otome/Visual Novel cho phòng chat.
+- Thêm chức năng chỉnh sửa, xóa tin nhắn, quản lý thành viên nâng cao.
+
+### 06/2025
+- Hoàn thiện tài liệu, kiểm thử, sửa lỗi.
+- Deploy bản production, tối ưu hiệu năng.
+- Tổng kết, viết báo cáo dự án.
 
 ---
 
-## 🌟 Features  
-
-- 💬 **Real-time Messaging** – Instant chat functionality with fast updates.  
-- 🗨️ **One-to-One Chat** – Private messaging between users.  
-- 📦 **Server Management** – Create and manage servers with ease.  
-- 🎭 **Role Management** – Assign roles like Moderator or Guest to members.  
-- 🛡️ **Member Moderation** – Kick or ban users from servers.  
-- 🔑 **User Authentication** – Secure sign-up and login using Clerk.  
-- 🎤 **Voice & Video Calls** – Seamless group voice and video streaming powered by LiveKit.  
-- 📝 **Edit Messages** – Edit previously sent messages for corrections or updates.  
-- 📁 **File Sharing** – Upload and share files in chats using UploadThing.  
-- ⚡ **Responsive UI** – Fully functional on desktop, tablet, and mobile.  
-
----
-
-## 🚀 How to Run  
-
-1.  **Clone the repository**
-   
-   ```bash  
-   git clone https://github.com/Souvik606/discord-clone.git  
-   cd discord-clone
-  ```
-
-2.  **Install dependencies**
-
-   ```bash
-   npm install
-     or
-   yarn install
-  ```
-
-3. **Add the environment variables**
-  Make a .env file and add clerk, uploadthings, database url and livekit credentials
-
-  ```bash
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-  CLERK_SECRET_KEY
-  NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-  NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-  NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
-  NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
-  DATABASE_URL
-  UPLOADTHING_SECRET
-  UPLOADTHING_TOKEN
-  LIVEKIT_API_KEY
-  LIVEKIT_API_SECRET
-  NEXT_PUBLIC_LIVEKIT_URL
-```
-4. **Start the development server**
-
-  ```bash
-  npm run dev  
-    or
-  yarn dev
-```
-5. **Open the app**
-     Visit http://localhost:3000 in your browser.
+> Đây là nhật ký phát triển, không phải hướng dẫn sử dụng. Nếu cần hướng dẫn cài đặt, vui lòng xem lại các commit cũ hoặc liên hệ tác giả.
