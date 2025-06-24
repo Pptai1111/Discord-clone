@@ -12,6 +12,7 @@ import { Plus} from 'lucide-react'
 import { useModal } from '@/hooks/use-modal-store'
 import { useRouter } from 'next/navigation'
 import EmojiPicker from '../emoji-picker'
+import { useSocket } from "@/components/providers/socket-provider";
 
 interface ChatInputProps {
   apiUrl: string
@@ -27,6 +28,7 @@ const formSchema = z.object({
 export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
   const { onOpen } = useModal()
   const router = useRouter()
+  const { socket } = useSocket();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,8 +48,20 @@ export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
 
       await axios.post(url, values)
 
+      // Emit socket event ngay sau khi gửi thành công (chỉ cho type channel)
+      if (socket && type === 'channel' && query.channelId) {
+        socket.emit('chat:sendMessage', {
+          roomId: query.channelId,
+          message: {
+            content: values.content,
+            sender: name,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
       form.reset()
-      router.refresh()
+      // Không cần router.refresh() nếu đã có realtime
     } catch (error) {
       console.log(error)
     }

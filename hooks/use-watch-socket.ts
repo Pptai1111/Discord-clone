@@ -562,25 +562,27 @@ export const useWatchSocket = (chatId: string, userId?: string) => {
   }, [chatId, userId]);
 
   // Các hàm action
-  const play = useCallback(() => {
+  const play = useCallback((time?: number) => {
     if (socket && isConnected) {
       socket.emit('watch:play', {
         chatId,
         event: 'watch:play',
+        data: { time },
       });
     } else {
-      throttledRequest('watch:play');
+      throttledRequest('watch:play', { time });
     }
   }, [chatId, socket, isConnected, throttledRequest]);
 
-  const pause = useCallback(() => {
+  const pause = useCallback((time?: number) => {
     if (socket && isConnected) {
       socket.emit('watch:pause', {
         chatId,
         event: 'watch:pause',
+        data: { time },
       });
     } else {
-      throttledRequest('watch:pause');
+      throttledRequest('watch:pause', { time });
     }
   }, [chatId, socket, isConnected, throttledRequest]);
 
@@ -627,15 +629,15 @@ export const useWatchSocket = (chatId: string, userId?: string) => {
     });
   }, [socket, chatId, userId]);
 
-  const next = useCallback((index: number) => {
+  const next = useCallback((index: number, time?: number) => {
     if (socket && isConnected) {
       socket.emit('watch:next', {
         chatId,
         event: 'watch:next',
-        data: { index },
+        data: { index, time },
       });
     } else {
-      throttledRequest('watch:next', { index });
+      throttledRequest('watch:next', { index, time });
     }
   }, [chatId, socket, isConnected, throttledRequest]);
 
@@ -773,4 +775,4 @@ export const useWatchSocket = (chatId: string, userId?: string) => {
     saveStateToStorage,
     fallbackSyncRequest
   };
-}; 
+};

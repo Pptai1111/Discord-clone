@@ -45,6 +45,15 @@ interface Viewer {
   imageUrl?: string;
 }
 
+interface ChatMessage {
+  id: string;
+  content: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  timestamp: string;
+}
+
 interface WatchRoomProps {
   chatId: string;
   member: Member;
@@ -83,6 +92,9 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
   const [isBuffering, setIsBuffering] = useState<boolean>(false)
   const [viewers, setViewers] = useState<Viewer[]>([])
   const [showViewers, setShowViewers] = useState<boolean>(false)
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const chatBottomRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null)
   const isAdmin = useMemo(() => member.role === "ADMIN" || member.role === "MODERATOR", [member])
   const [lastSyncAt, setLastSyncAt] = useState<number>(0);
@@ -612,6 +624,24 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
     }
   };
 
+  // Gửi tin nhắn
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !socket) return;
+    const msg: ChatMessage = {
+      id: `${Date.now()}-${userId}`,
+      content: chatInput,
+      senderId: userId || 'unknown',
+      senderName: member?.profile?.name || 'Người dùng',
+      senderAvatar: member?.profile?.imageUrl,
+      timestamp: new Date().toISOString(),
+    };
+    socket.emit(`watch:${chatId}:chat`, msg);
+    setMessages(prev => [...prev, msg]);
+    setChatInput('');
+    setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+  };
+
   // Xử lý khi bấm Enter trong input
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && isAdmin) {
@@ -1044,8 +1074,42 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
 
           <div className="flex-1 relative">
             {renderPlayer()}
+            {/* Chat UI */}
+            <div className="absolute bottom-0 left-0 w-full max-w-lg p-2">
+          <div className="bg-zinc-800/90 rounded-lg shadow-lg max-h-60 overflow-y-auto p-2 mb-2" style={{height:'180px'}}>
+            {messages.length === 0 && (
+              <div className="text-xs text-zinc-400 text-center">Chưa có tin nhắn nào.</div>
+            )}
+            {messages.map((msg) => (
+              <div key={msg.id} className="flex items-start gap-2 mb-2">
+                <Avatar className="h-7 w-7">
+                  <AvatarImage src={msg.senderAvatar} />
+                  <AvatarFallback>{msg.senderName?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="text-xs font-semibold text-zinc-200">{msg.senderName}</div>
+                  <div className="text-sm text-zinc-100 bg-zinc-700 rounded px-2 py-1 inline-block max-w-xs break-words">{msg.content}</div>
+                  <div className="text-[10px] text-zinc-400">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                </div>
+              </div>
+            ))}
+            <div ref={chatBottomRef} />
           </div>
-
+          <form onSubmit={handleSendMessage} className="flex gap-2">
+            <Input
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              placeholder="Nhắn tin..."
+              className="bg-zinc-700 text-white text-sm flex-1"
+              autoComplete="off"
+              maxLength={500}
+            />
+            <Button type="submit" className="bg-indigo-500 hover:bg-indigo-600" disabled={!chatInput.trim()}>
+              Gửi
+            </Button>
+          </form>
+        </div>
+          </div>
           {/* Controls */}
           {currentVideo && (
             <div className="flex items-center bg-zinc-900 p-2 border-t border-zinc-700">
@@ -1161,14 +1225,9 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
                 <div className="text-zinc-500 text-sm">No videos in playlist</div>
               )}
             </div>
-            {!isAdmin && Array.isArray(playlist) && playlist.length > 0 && (
-              <div className="text-xs text-zinc-500 mt-2 px-1">
-                * Nhấn đúp vào video để phát
-              </div>
-            )}
           </div>
         </>
       )}
     </div>
   );
-};
+}

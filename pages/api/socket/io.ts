@@ -15,6 +15,9 @@ let createdIntervals: NodeJS.Timeout[] = [];
 // Quản lý các phòng đang kết nối
 let activeRooms: Record<string, Set<string>> = {};
 
+// Quản lý playlist cho từng phòng
+let roomPlaylists: Record<string, any[]> = {};
+
 const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
     console.log("Socket.IO handler called", new Date().toISOString());
     
@@ -90,6 +93,17 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
                     roomId,
                     memberCount: roomSize
                 });
+                
+                // Gửi playlist hiện tại cho client vừa join
+                if (roomPlaylists[roomId]) {
+                    socket.emit("watch:sync", {
+                        playlist: roomPlaylists[roomId],
+                        currentIndex: 0,
+                        isPlaying: false,
+                        progress: 0,
+                        chatId: roomId
+                    });
+                }
             });
             
             socket.on("leave-room", (roomId: string) => {
@@ -156,6 +170,88 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
                 
                 socket.broadcast.emit("user:offline", {
                     socketId: socket.id,
+                    timestamp: new Date().toISOString()
+                });
+            });
+            
+            // Xử lý thêm video vào phòng
+            socket.on("watch:addVideo", (payload) => {
+                const { chatId, data } = payload || {};
+                if (!chatId || !data?.video) return;
+                if (!roomPlaylists[chatId]) roomPlaylists[chatId] = [];
+                // Thêm video vào playlist phòng
+                roomPlaylists[chatId].push(data.video);
+                // Broadcast lại toàn bộ playlist mới cho phòng
+                io.to(chatId).emit("watch:sync", {
+                    playlist: roomPlaylists[chatId],
+                    currentIndex: roomPlaylists[chatId].length - 1,
+                    isPlaying: false,
+                    progress: 0,
+                    chatId
+                });
+            });
+
+            // Xử lý đồng bộ playlist khi client yêu cầu
+            socket.on("watch:requestSync", (payload) => {
+                const { chatId } = payload || {};
+                if (!chatId) return;
+                if (!roomPlaylists[chatId]) roomPlaylists[chatId] = [];
+                // Gửi lại playlist hiện tại cho client
+                socket.emit("watch:sync", {
+                    playlist: roomPlaylists[chatId],
+                    currentIndex: 0,
+                    isPlaying: false,
+                    progress: 0,
+                    chatId
+                });
+            });
+
+            // Đồng bộ play
+            socket.on("watch:play", (payload) => {
+                const { chatId, data } = payload || {};
+                if (!chatId) return;
+                io.to(chatId).emit("watch:play", {
+                    chatId,
+                    ...data
+                });
+            });
+            // Đồng bộ pause
+            socket.on("watch:pause", (payload) => {
+                const { chatId, data } = payload || {};
+                if (!chatId) return;
+                io.to(chatId).emit("watch:pause", {
+                    chatId,
+                    ...data
+                });
+            });
+            // Đồng bộ seek
+            socket.on("watch:seek", (payload) => {
+                const { chatId, data } = payload || {};
+                if (!chatId || typeof data?.time !== 'number') return;
+                io.to(chatId).emit("watch:seek", {
+                    chatId,
+                    ...data
+                });
+            });
+            // Đồng bộ next
+            socket.on("watch:next", (payload) => {
+                const { chatId, data } = payload || {};
+                if (!chatId || typeof data?.index !== 'number') return;
+                io.to(chatId).emit("watch:next", {
+                    chatId,
+                    ...data
+                });
+            });
+            
+            // Xử lý gửi và nhận tin nhắn chat realtime
+            socket.on("chat:sendMessage", (payload) => {
+                const { roomId, message } = payload || {};
+                if (!roomId || !message) return;
+                // Broadcast tin nhắn mới cho tất cả client trong phòng
+                io.to(roomId).emit("chat:newMessage", {
+                    message,
+                    senderId: socket.id,
+                    roomId,
                     timestamp: new Date().toISOString()
                 });
             });

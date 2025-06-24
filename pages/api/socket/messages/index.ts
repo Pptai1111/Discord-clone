@@ -62,7 +62,7 @@ export default async function handler(
         }
 
         const member = server.members.find(
-        (member) => member.profileId === profile?.id
+        (member: any) => member.profileId === profile?.id
         )
 
         if (!member) {
@@ -85,7 +85,7 @@ export default async function handler(
             }
         });
 
-        const channelKey=`chat:${channelId}:message`
+        const channelKey=`chat:${channelId}:messages`
         res?.socket?.server?.io?.emit(channelKey,message)
         return res.status(200).json(message);
 

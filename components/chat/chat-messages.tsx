@@ -4,11 +4,12 @@ import { Member, Message, Profile } from "@prisma/client";
 import ChatWelcome from "./chat-welcome";
 import { useChatQuery } from "@/hooks/use-chat-query";
 import { Loader2, ServerCrash } from "lucide-react";
-import { Fragment,useRef} from "react";
+import { Fragment,useRef,useEffect} from "react";
 import ChatItem from "./chat-item";
 import { format } from 'date-fns'
 import { useChatSocket } from "@/hooks/use-chat-socket";
 import { useChatScroll } from "@/hooks/use-chat-scroll";
+import { useSocket } from "@/components/providers/socket-provider";
 
 const DATE_FORMAT = 'd MMM yyyy,HH:mm'
 
@@ -57,6 +58,12 @@ const ChatMessages = ({
   })
 
     useChatSocket({queryKey,addKey,updateKey});
+    const { socket } = useSocket();
+    useEffect(() => {
+      if (socket && chatId) {
+        socket.emit("join-room", chatId);
+      }
+    }, [socket, chatId]);
 
     if (status === 'pending') {
         return (
