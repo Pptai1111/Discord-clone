@@ -90,6 +90,7 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
   const [isClientSide, setIsClientSide] = useState<boolean>(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const MAX_RECONNECT_ATTEMPTS = 5;
+  const [volume, setVolume] = useState<number>(1);
 
   // Đảm bảo chỉ hiển thị ở phía client
   useEffect(() => {
@@ -459,6 +460,9 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
   };
 
   const handleSeek = (time: number) => {
+    if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
+      playerRef.current.seekTo(time, 'seconds');
+    }
     setProgress(time);
     try {
       if (!socket) return;
@@ -489,27 +493,17 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
       return;
     }
 
-    // Đặt trạng thái
     setIsLoadingVideo(true);
     setError(null);
-    
     try {
-      // Chuẩn hóa URL
       let processedUrl = inputUrl.trim();
-      
-      // Xử lý URL YouTube shorts
       if (processedUrl.includes('youtube.com/shorts/')) {
         processedUrl = processedUrl.replace('/shorts/', '/watch?v=');
       }
-      
-      // Thêm protocol nếu không có
       if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
         processedUrl = 'https://' + processedUrl;
       }
-      
       console.log(`URL sau khi xử lý: ${processedUrl}`);
-      
-      // Kiểm tra URL có đúng định dạng không
       try {
         new URL(processedUrl);
       } catch (e) {
@@ -517,27 +511,21 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
         setIsLoadingVideo(false);
         return;
       }
-      
-      // Kiểm tra URL có phát được không - CHỈ THỰC HIỆN Ở CLIENT
       if (isClientSide) {
         try {
           const ReactPlayerModule = await import('react-player/lazy');
           if (!ReactPlayerModule.default.canPlay(processedUrl)) {
-        setError('URL không được hỗ trợ. Hãy thử URL từ YouTube, Vimeo, v.v.');
-        setIsLoadingVideo(false);
-        return;
+            setError('URL không được hỗ trợ. Hãy thử URL từ YouTube, Vimeo, v.v.');
+            setIsLoadingVideo(false);
+            return;
           }
         } catch (error) {
           console.error("Lỗi khi kiểm tra URL:", error);
         }
       }
-      
-      // Xác định ID video và lấy thumbnail
       let videoId = '';
       let thumbnail = '';
       let title = '';
-      
-      // YouTube
       if (processedUrl.includes('youtube.com') || processedUrl.includes('youtu.be')) {
         const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
         const match = processedUrl.match(regex);
@@ -556,8 +544,6 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
         thumbnail = getDefaultThumbnail('other');
         title = `Video`;
       }
-      
-      // Tạo video object với ID ổn định
       const video: VideoItem = {
         id: videoId || `video-${Date.now().toString()}`,
         url: processedUrl,
@@ -566,58 +552,57 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
         addedAt: Date.now(),
         addedBy: userId || 'unknown'
       };
-      
       console.log('Thêm video mới:', video);
-      
       if (addVideo) {
-        // Sử dụng hàm từ hook
         addVideo(video);
-      } else {
-        // Fallback
-      try {
-        const response = await fetch('/api/socket/watch', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            chatId,
-            event: 'watch:addVideo',
-            data: { 
-              video,
-              userId 
-            }
-          }),
+        // Nếu playlist đang rỗng, phát luôn video đầu tiên
+        setPlaylist(prev => {
+          if (prev.length === 0) {
+            setCurrentVideoIndex(0);
+            setPlaying(true);
+            return [video];
+          }
+          return [...prev, video];
         });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error ${response.status}`);
-        }
-        
-        const result = await response.json();
-        console.log('Kết quả thêm video:', result);
-        
-        if (result.success) {
-          // Thêm vào playlist local để hiển thị ngay lập tức
-          setPlaylist(prev => {
-            // Kiểm tra trùng lặp
-            const exists = prev.some(item => item.url === video.url || item.id === video.id);
-            if (exists) return prev;
-            return [...prev, video];
+      } else {
+        try {
+          const response = await fetch('/api/socket/watch', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              chatId,
+              event: 'watch:addVideo',
+              data: { 
+                video,
+                userId 
+              }
+            }),
           });
-          
-            // Yêu cầu đồng bộ sau khi thêm
+          if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+          }
+          const result = await response.json();
+          console.log('Kết quả thêm video:', result);
+          if (result.success) {
+            setPlaylist(prev => {
+              if (prev.length === 0) {
+                setCurrentVideoIndex(0);
+                setPlaying(true);
+                return [video];
+              }
+              return [...prev, video];
+            });
             if (requestSync) {
               setTimeout(requestSync, 500);
             }
-        }
-      } catch (err) {
-        console.error('Lỗi khi gửi video qua HTTP:', err);
-        setError('Không thể thêm video. Vui lòng thử lại sau.');
+          }
+        } catch (err) {
+          console.error('Lỗi khi gửi video qua HTTP:', err);
+          setError('Không thể thêm video. Vui lòng thử lại sau.');
         }
       }
-      
-      // Reset input
       setInputUrl('');
       setIsLoadingVideo(false);
     } catch (error) {
@@ -893,7 +878,7 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
               url={currentVideo.url}
               width="100%"
               height="100%"
-            playing={playing}
+              playing={playing}
               controls={false}
               onProgress={handleProgress}
               onEnded={handleEnded}
@@ -902,12 +887,17 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
               onBufferEnd={handleBufferEnd}
               onReady={handleVideoReady}
               onStart={handleVideoReady}
+              volume={volume}
               config={{
                 youtube: {
-                  playerVars: { 
-                    showinfo: 1,
-                  origin: typeof window !== 'undefined' ? window.location.origin : '',
-                    rel: 0
+                  playerVars: {
+                    modestbranding: 1,
+                    showinfo: 0,
+                    rel: 0,
+                    controls: 0,
+                    disablekb: 1,
+                    fs: 0,
+                    iv_load_policy: 3,
                   },
                   embedOptions: {
                     onError: (e: any) => handleError(e)
@@ -988,9 +978,7 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
           <div className="bg-zinc-800 p-3 flex items-center justify-between">
             <h2 className="text-zinc-100 font-semibold flex items-center">
               <span>Watch Together</span>
-              <div className="ml-2">
-                {showConnectionStatus()}
-              </div>
+              <div className="ml-2">{showConnectionStatus()}</div>
             </h2>
             
             <div className="flex items-center gap-2">
@@ -1084,22 +1072,38 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
               </Button>
 
               <div className="flex-1 mx-4">
-                <div className="bg-zinc-700 h-1 w-full rounded overflow-hidden cursor-pointer">
+                <div 
+                  className="bg-zinc-700 h-1 w-full rounded overflow-hidden cursor-pointer"
+                  onClick={(e) => {
+                    if (isAdmin && playerRef.current) {
+                      const bounds = e.currentTarget.getBoundingClientRect();
+                      const percent = (e.clientX - bounds.left) / bounds.width;
+                      const duration = playerRef.current.getDuration() || 0;
+                      handleSeek(percent * duration);
+                    }
+                  }}
+                >
                   <div 
                     className="bg-indigo-500 h-full" 
                     style={{ width: `${(progress / duration) * 100}%` }}
-                    onClick={(e) => {
-                      if (isAdmin && playerRef.current) {
-                        const bounds = e.currentTarget.getBoundingClientRect()
-                        const percent = (e.clientX - bounds.left) / bounds.width
-                        const duration = playerRef.current.getDuration() || 0
-                        handleSeek(percent * duration)
-                      }
-                    }}
                   ></div>
                 </div>
               </div>
 
+              {/* Volume control */}
+              <div className="flex items-center gap-2 w-32">
+                <span className="text-xs text-zinc-400">🔊</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={volume}
+                  onChange={e => setVolume(Number(e.target.value))}
+                  className="w-full accent-indigo-500"
+                />
+              </div>
+              
               <Button 
                 variant="ghost"
                 className="text-zinc-400 hover:text-white"
@@ -1135,21 +1139,17 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
             </div>
             
             <div className="max-h-32 overflow-y-auto w-full">
-              {error && (
-                <div className="text-red-400 text-xs mb-2 px-1">{error}</div>
-              )}
+              {error && <div className="text-red-400 text-xs mb-2 px-1">{error}</div>}
               {Array.isArray(playlist) && playlist.length > 0 ? (
                 <ul className="w-full break-words whitespace-normal">
                   {playlist.map((video, index) => (
-                    <li 
+                    <li
                       key={video.id || index}
-                      className={`flex items-center p-2 rounded ${
-                        index === currentVideoIndex ? 'bg-zinc-700' : 'hover:bg-zinc-800'
-                      } ${!isAdmin ? 'cursor-default' : 'cursor-pointer'} w-full break-all`}
+                      className={`flex items-center p-2 rounded ${index === currentVideoIndex ? 'bg-zinc-700' : 'hover:bg-zinc-800'} ${!isAdmin ? 'cursor-default' : 'cursor-pointer'} w-full break-all`}
                       onClick={() => {
                         if (isAdmin) {
-                          nextVideo(index)
-                          setCurrentVideoIndex(index)
+                          nextVideo(index);
+                          setCurrentVideoIndex(index);
                         }
                       }}
                     >
@@ -1162,11 +1162,13 @@ export const WatchRoom = ({ chatId, member }: WatchRoomProps) => {
               )}
             </div>
             {!isAdmin && Array.isArray(playlist) && playlist.length > 0 && (
-              <p className="text-xs text-zinc-500 mt-2">Chỉ Admin và Moderator mới có thể điều khiển danh sách phát</p>
+              <div className="text-xs text-zinc-500 mt-2 px-1">
+                * Nhấn đúp vào video để phát
+              </div>
             )}
           </div>
         </>
       )}
     </div>
-  )
-} 
+  );
+};

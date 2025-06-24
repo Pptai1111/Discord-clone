@@ -1,73 +1,27 @@
-# 🎧 Discord Clone  
+# 📈 Dự Án Discord Clone – Nhật Ký Phát Triển
 
-A sleek real-time chat app inspired by Discord, built using:  
-
-- ✨ **Next.js** – Modern React framework for server-side rendering.  
-- 🎨 **ShadCN** – Pre-styled components for rapid UI building.  
-- 🎋 **Tailwind CSS** – Utility-first CSS framework.  
-- 🔑 **Clerk** – Authentication and user management.  
-- 📦 **Zustand** – Simple and scalable state management.  
-- 🎤 **LiveKit** – High-quality voice/video streaming.  
-- 🗂️ **UploadThing** – Easy file uploads.  
-- 💬 **Socket.IO** – Real-time bidirectional communication.  
+> **Tác giả:** _Phan Phú Tài_
+> **Thời gian thực hiện:** _Tháng 2/2025 – Tháng 6/2025_
 
 ---
 
-## 🌟 Features  
+## Timeline & Milestones
 
-- 💬 **Real-time Messaging** – Instant chat functionality with fast updates.  
-- 🗨️ **One-to-One Chat** – Private messaging between users.  
-- 📦 **Server Management** – Create and manage servers with ease.  
-- 🎭 **Role Management** – Assign roles like Moderator or Guest to members.  
-- 🛡️ **Member Moderation** – Kick or ban users from servers.  
-- 🔑 **User Authentication** – Secure sign-up and login using Clerk.  
-- 🎤 **Voice & Video Calls** – Seamless group voice and video streaming powered by LiveKit.  
-- 📝 **Edit Messages** – Edit previously sent messages for corrections or updates.  
-- 📁 **File Sharing** – Upload and share files in chats using UploadThing.  
-- ⚡ **Responsive UI** – Fully functional on desktop, tablet, and mobile.  
+| Thời gian    | Hạng mục chính                                 | Mô tả công việc chính                                                                 |
+|--------------|------------------------------------------------|--------------------------------------------------------------------------------------|
+| **02/2025**  | Khởi tạo dự án & Cơ bản                        | - Tạo project Next.js, cấu hình TypeScript, Tailwind, ShadCN UI<br>- Thiết kế cấu trúc thư mục<br>- Tích hợp xác thực Clerk |
+| **03/2025**  | Chức năng Server & Chat                        | - Xây dựng tạo/quản lý server, phân quyền<br>- Nhắn tin real-time với Socket.IO<br>- Thiết kế UI chat, sidebar, navigation |
+| **04/2025**  | Voice/Video & File                             | - Tích hợp LiveKit cho gọi thoại/video<br>- Upload file với UploadThing<br>- Responsive UI cho desktop/mobile |
+| **05/2025**  | Chatbot & Nâng cao trải nghiệm                 | - Thêm phòng chat Chatbot, hiệu ứng Otome<br>- Chỉnh sửa/xóa tin nhắn, quản lý thành viên nâng cao |
+| **06/2025**  | Hoàn thiện & Triển khai                        | - Viết tài liệu, kiểm thử, sửa lỗi<br>- Deploy production, tối ưu hiệu năng<br>- Tổng kết, báo cáo dự án |
 
 ---
 
-## 🚀 How to Run  
+## Tổng Quan
+- Dự án mô phỏng Discord với các tính năng: chat real-time, server, phân quyền, voice/video, file, chatbot AI, giao diện hiện đại.
+- Công nghệ: **Next.js, Tailwind CSS, ShadCN UI, Clerk, Socket.IO, LiveKit, UploadThing**.
+- Giao diện phòng chat chatbot lấy cảm hứng từ game Otome/Visual Novel.
 
-1.  **Clone the repository**
-   
-   ```bash  
-   git clone https://github.com/Souvik606/discord-clone.git  
-   cd discord-clone
-  ```
+---
 
-2.  **Install dependencies**
-
-   ```bash
-   npm install
-     or
-   yarn install
-  ```
-
-3. **Add the environment variables**
-  Make a .env file and add clerk, uploadthings, database url and livekit credentials
-
-  ```bash
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-  CLERK_SECRET_KEY
-  NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-  NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-  NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
-  NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
-  DATABASE_URL
-  UPLOADTHING_SECRET
-  UPLOADTHING_TOKEN
-  LIVEKIT_API_KEY
-  LIVEKIT_API_SECRET
-  NEXT_PUBLIC_LIVEKIT_URL
-```
-4. **Start the development server**
-
-  ```bash
-  npm run dev  
-    or
-  yarn dev
-```
-5. **Open the app**
-     Visit http://localhost:3000 in your browser.
+> _Tài liệu này là nhật ký phát triển, không phải hướng dẫn sử dụng. Mọi thắc mắc về cài đặt hoặc đóng góp, vui lòng liên hệ tác giả._
